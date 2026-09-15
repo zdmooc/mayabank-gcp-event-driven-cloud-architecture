@@ -1,0 +1,254 @@
+openapi: 3.1.0
+info:
+  title: Maya Automotive Financial Services API
+  version: 0.1.0
+  description: Synthetic financial relationship hub API. No real client data.
+servers:
+  - url: https://api.example.invalid/v1
+    description: Placeholder only; no deployed endpoint is claimed.
+security:
+  - bearerAuth: []
+paths:
+  /customers:
+    post:
+      operationId: createCustomer
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Customer' }
+      responses:
+        '201':
+          description: Customer created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Customer' }
+        '400': { $ref: '#/components/responses/ErrorResponse' }
+  /customers/{id}:
+    get:
+      operationId: getCustomer
+      parameters:
+        - $ref: '#/components/parameters/CustomerId'
+        - $ref: '#/components/parameters/CorrelationId'
+      responses:
+        '200':
+          description: Customer
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Customer' }
+        '404': { $ref: '#/components/responses/ErrorResponse' }
+  /matching/evaluate:
+    post:
+      operationId: evaluateCustomerMatch
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MatchRequest' }
+      responses:
+        '200':
+          description: Explainable matching decision
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MatchDecision' }
+  /contracts:
+    post:
+      operationId: createContract
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Contract' }
+      responses:
+        '201':
+          description: Contract created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Contract' }
+        '400': { $ref: '#/components/responses/ErrorResponse' }
+  /contracts/{id}:
+    get:
+      operationId: getContract
+      parameters:
+        - $ref: '#/components/parameters/ContractId'
+        - $ref: '#/components/parameters/CorrelationId'
+      responses:
+        '200':
+          description: Contract
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Contract' }
+        '404': { $ref: '#/components/responses/ErrorResponse' }
+  /customers/{id}/contracts:
+    get:
+      operationId: getCustomerContracts
+      parameters:
+        - $ref: '#/components/parameters/CustomerId'
+        - $ref: '#/components/parameters/CorrelationId'
+      responses:
+        '200':
+          description: Customer contracts
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Contract' }
+  /customers/{id}/relationship:
+    get:
+      operationId: getCustomerRelationship
+      parameters:
+        - $ref: '#/components/parameters/CustomerId'
+        - $ref: '#/components/parameters/CorrelationId'
+      responses:
+        '200':
+          description: Consolidated relationship
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Relationship' }
+  /customers/{id}/recommendations:
+    get:
+      operationId: getRecommendations
+      parameters:
+        - $ref: '#/components/parameters/CustomerId'
+        - $ref: '#/components/parameters/CorrelationId'
+      responses:
+        '200':
+          description: Explainable recommendations
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Recommendation' }
+  /vehicles/{id}/residual-value:
+    get:
+      operationId: getResidualValue
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/CorrelationId'
+      responses:
+        '200':
+          description: Synthetic residual value
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ResidualValue' }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    CorrelationId:
+      name: X-Correlation-Id
+      in: header
+      required: false
+      schema: { type: string, maxLength: 128 }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      schema: { type: string, maxLength: 128 }
+    CustomerId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string }
+    ContractId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string }
+  responses:
+    ErrorResponse:
+      description: API error
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Error' }
+  schemas:
+    Customer:
+      type: object
+      required: [id]
+      properties:
+        id: { type: string }
+        firstName: { type: string }
+        lastName: { type: string }
+        email: { type: string, format: email }
+        phone: { type: string }
+    Contract:
+      type: object
+      required: [id, customerId, type, startDate, endDate, status]
+      properties:
+        id: { type: string }
+        customerId: { type: string }
+        vehicleId: { type: [string, 'null'] }
+        type: { type: string, enum: [FINANCE, LEASE, LOAN, SERVICE, INSURANCE] }
+        startDate: { type: string, format: date }
+        endDate: { type: string, format: date }
+        status: { type: string, enum: [DRAFT, ACTIVE, CLOSED] }
+        monthlyPayment: { type: [number, 'null'] }
+    MatchRequest:
+      type: object
+      properties:
+        externalCustomerId: { type: string }
+        firstName: { type: string }
+        lastName: { type: string }
+        birthDate: { type: string, format: date }
+        postalCode: { type: string }
+        email: { type: string }
+        phone: { type: string }
+    MatchDecision:
+      type: object
+      required: [requestId, score, decision, rules]
+      properties:
+        requestId: { type: string }
+        candidateCustomerId: { type: [string, 'null'] }
+        score: { type: number, minimum: 0, maximum: 1 }
+        decision: { type: string, enum: [MATCHED, REVIEW_REQUIRED, NO_MATCH] }
+        rules:
+          type: array
+          items: { type: string }
+    Relationship:
+      type: object
+      required: [customerId, vehicles, contracts, recommendations]
+      properties:
+        customerId: { type: string }
+        vehicles: { type: array, items: { type: object } }
+        contracts: { type: array, items: { $ref: '#/components/schemas/Contract' } }
+        recommendations: { type: array, items: { $ref: '#/components/schemas/Recommendation' } }
+    Recommendation:
+      type: object
+      required: [customerId, type, score, reason]
+      properties:
+        customerId: { type: string }
+        type: { type: string, enum: [VEHICLE_RENEWAL, NEW_FINANCE_OFFER, LEASE_REVIEW, SERVICE_CONTRACT] }
+        score: { type: number, minimum: 0, maximum: 1 }
+        reason: { type: string }
+    ResidualValue:
+      type: object
+      required: [vehicleId, estimatedResidualValue, currency, model]
+      properties:
+        vehicleId: { type: string }
+        estimatedResidualValue: { type: number }
+        currency: { type: string, const: EUR }
+        model: { type: string, const: SYNTHETIC_V1 }
+    Error:
+      type: object
+      required: [type, title, status, correlationId]
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        correlationId: { type: string }

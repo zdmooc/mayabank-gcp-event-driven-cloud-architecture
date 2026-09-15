@@ -1,0 +1,95 @@
+asyncapi: 3.0.0
+info:
+  title: Maya Automotive Financial Services Events
+  version: 0.1.0
+  description: Synthetic domain event contracts for the GCP event-driven POC.
+defaultContentType: application/json
+servers:
+  gcpPubSub:
+    host: pubsub.googleapis.com
+    protocol: googlepubsub
+    description: Target GCP Pub/Sub broker; not yet deployed.
+channels:
+  contractEvents:
+    address: contract-events-v1
+    messages:
+      ContractCreated: { $ref: '#/components/messages/ContractCreated' }
+      ContractUpdated: { $ref: '#/components/messages/ContractUpdated' }
+      ContractEndApproaching: { $ref: '#/components/messages/ContractEndApproaching' }
+  customerEvents:
+    address: customer-events-v1
+    messages:
+      CustomerMatched: { $ref: '#/components/messages/CustomerMatched' }
+  engagementEvents:
+    address: engagement-events-v1
+    messages:
+      GoldenMomentDetected: { $ref: '#/components/messages/GoldenMomentDetected' }
+      RenewalOpportunityDetected: { $ref: '#/components/messages/RenewalOpportunityDetected' }
+      RecommendationGenerated: { $ref: '#/components/messages/RecommendationGenerated' }
+operations:
+  publishContractCreated:
+    action: send
+    channel: { $ref: '#/channels/contractEvents' }
+    messages:
+      - { $ref: '#/channels/contractEvents/messages/ContractCreated' }
+  consumeContractCreatedForMatching:
+    action: receive
+    channel: { $ref: '#/channels/contractEvents' }
+    messages:
+      - { $ref: '#/channels/contractEvents/messages/ContractCreated' }
+  consumeEngagementEvents:
+    action: receive
+    channel: { $ref: '#/channels/engagementEvents' }
+components:
+  messages:
+    ContractCreated:
+      name: ContractCreated
+      title: Contract created
+      payload:
+        allOf:
+          - { $ref: '#/components/schemas/EventEnvelope' }
+          - type: object
+            properties:
+              data: { $ref: '#/components/schemas/ContractData' }
+    ContractUpdated:
+      name: ContractUpdated
+      payload: { $ref: '#/components/schemas/EventEnvelope' }
+    ContractEndApproaching:
+      name: ContractEndApproaching
+      payload: { $ref: '#/components/schemas/EventEnvelope' }
+    CustomerMatched:
+      name: CustomerMatched
+      payload: { $ref: '#/components/schemas/EventEnvelope' }
+    GoldenMomentDetected:
+      name: GoldenMomentDetected
+      payload: { $ref: '#/components/schemas/EventEnvelope' }
+    RenewalOpportunityDetected:
+      name: RenewalOpportunityDetected
+      payload: { $ref: '#/components/schemas/EventEnvelope' }
+    RecommendationGenerated:
+      name: RecommendationGenerated
+      payload: { $ref: '#/components/schemas/EventEnvelope' }
+  schemas:
+    EventEnvelope:
+      type: object
+      required: [specversion, id, type, source, time, datacontenttype, correlationId, aggregateVersion, data]
+      properties:
+        specversion: { type: string, const: '1.0' }
+        id: { type: string }
+        type: { type: string, pattern: '^maya\\.finance\\..+\\.v[0-9]+$' }
+        source: { type: string }
+        time: { type: string, format: date-time }
+        subject: { type: string }
+        datacontenttype: { type: string, const: application/json }
+        correlationId: { type: string }
+        causationId: { type: [string, 'null'] }
+        aggregateVersion: { type: integer, minimum: 0 }
+        data: { type: object }
+    ContractData:
+      type: object
+      required: [contractId, customerId, type]
+      properties:
+        contractId: { type: string }
+        customerId: { type: string }
+        vehicleId: { type: [string, 'null'] }
+        type: { type: string }
