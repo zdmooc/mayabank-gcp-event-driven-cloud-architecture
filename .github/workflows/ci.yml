@@ -20,12 +20,13 @@ jobs:
           cache: maven
       - name: Build and test Spring Boot composition
         run: mvn -B verify
-      - name: Run dependency-free architecture self-tests
+      - name: Run architecture self-tests
         run: |
           java -cp domain-core/target/classes:domain-core/target/test-classes com.maya.finance.domain.CoreModelSelfTest
           java -cp domain-core/target/classes:domain-core/target/test-classes com.maya.finance.domain.MatchingSelfTest
           java -cp domain-core/target/classes:domain-core/target/test-classes com.maya.finance.domain.EngagementSelfTest
           java -cp domain-core/target/classes:domain-core/target/test-classes com.maya.finance.events.EventEnvelopeSelfTest
+          java -cp domain-core/target/classes:domain-core/target/test-classes com.maya.finance.reliability.ReliabilitySelfTest
 
   contract-syntax:
     runs-on: ubuntu-latest
@@ -37,3 +38,21 @@ jobs:
       - run: pip install PyYAML==6.0.3
       - name: Validate contract syntax and baseline structure
         run: python scripts/validate_contracts.py
+
+  terraform-static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.16.2'
+      - name: Terraform format
+        run: terraform fmt -check -recursive terraform
+      - name: Validate bootstrap
+        run: |
+          terraform -chdir=terraform/bootstrap init -backend=false
+          terraform -chdir=terraform/bootstrap validate
+      - name: Validate dev environment
+        run: |
+          terraform -chdir=terraform/environments/dev init -backend=false
+          terraform -chdir=terraform/environments/dev validate
