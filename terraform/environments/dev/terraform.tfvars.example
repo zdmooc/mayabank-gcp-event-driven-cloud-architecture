@@ -1,0 +1,8 @@
+project_id        = "replace-with-dedicated-lab-project"
+project_number    = ""
+region            = "europe-west1"
+environment       = "dev"
+application_image = "europe-west1-docker.pkg.dev/replace-with-dedicated-lab-project/maya-finance/financial-hub:replace-with-immutable-tag"
+enable_cloud_sql  = false
+billing_account   = ""
+budget_eur        = 25
